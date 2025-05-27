@@ -29,7 +29,7 @@ export default function VideoPlayer({ playbackId }: { playbackId: string }) {
     <div className="aspect-video w-full rounded-lg overflow-hidden shadow">
       <MuxPlayer
         playbackId={playbackId}
-        playbackToken={playbackToken}
+        playback-token={playbackToken}
         streamType="on-demand"
         metadata={{ video_id: playbackId }}
         className="w-full h-full"
