@@ -9,7 +9,7 @@ const muxClient = new Mux({
 // Your function should use the exported Video
 export async function getSignedPlaybackUrl(playbackId: string, expiresInSec = 120): string {
   const token = muxClient.jwt.signPlaybackId(playbackId, {
-    expiration: expiresInSec,
+    expiration: expiresInSec.toString(),
   })
   return `https://stream.mux.com/${playbackId}.m3u8?token=${token}`
 }
