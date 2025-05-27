@@ -4,8 +4,8 @@ import fetch from 'node-fetch'
 import Mux from '@mux/mux-node'
 
 const muxClient = new Mux({
-  tokenId:      process.env.MUX_TOKEN_ID!,
-  tokenSecret:  process.env.MUX_TOKEN_SECRET!,
+  tokenId: process.env.MUX_TOKEN_ID!,
+  tokenSecret: process.env.MUX_TOKEN_SECRET!,
   jwtSigningKey: process.env.MUX_SIGNING_KEY!,
   jwtPrivateKey: process.env.MUX_PRIVATE_KEY!,
 })
@@ -79,13 +79,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.setHeader(key, value)
       })
       res.status(200)
-      const reader = upstream.body!.getReader()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        res.write(Buffer.from(value))
-      }
-      res.end()
+      const nodeStream = upstream.body as NodeJS.ReadableStream
+      nodeStream.pipe(res)
       return
     }
 

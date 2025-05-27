@@ -68,7 +68,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       // await the async signPlaybackId call
       const token = await muxClient.jwt.signPlaybackId(vid.muxPlaybackId, {
         type: 'thumbnail',
-        params: { width: 240 },
+        params: { width: "240" },
         expiration: '2m',
       })
       // now this is a real string
