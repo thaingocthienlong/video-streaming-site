@@ -26,6 +26,7 @@ export default function AccessPage() {
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
 
   const handleAccess = async (e: FormEvent) => {
@@ -34,6 +35,9 @@ export default function AccessPage() {
       setError('Please complete the reCAPTCHA')
       return
     }
+
+    setIsSubmitting(true)
+    setError(null)
 
     const res = await fetch('/api/verify-access', {
       method: 'POST',
@@ -48,11 +52,11 @@ export default function AccessPage() {
       setError(payload.error || payload.message || "Access denied");
       recaptchaRef.current?.reset(); // Reset reCAPTCHA on error
       setRecaptchaToken(null); // Clear token
+      setIsSubmitting(false);
       return;
     }
 
     // 4) On success…
-    setError(null)
     recaptchaRef.current?.reset()
     setRecaptchaToken(null)
     router.push(`/course/${code}`);
@@ -131,6 +135,7 @@ export default function AccessPage() {
             label="Course Code"
             variant="outlined"
             fullWidth
+            disabled={isSubmitting}
             required
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -147,8 +152,9 @@ export default function AccessPage() {
             }}
 
           />
-          <Button type="submit" variant="contained" fullWidth>
-            Access Course
+          <Button disabled={isSubmitting || !recaptchaToken} type="submit" className="w-full py-2 rounded disabled:opacity-50"
+          style={{ backgroundColor: '#3B82F6', color: 'white' }} variant="contained" fullWidth>
+            {isSubmitting ? 'Accessing…' : 'ACCESS COURSE'}
           </Button>
           {error && (
             <Typography color="error" textAlign="center">
