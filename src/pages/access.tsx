@@ -1,5 +1,5 @@
 // pages/access.tsx
-import { useState } from 'react'
+import React, { useState, useRef, FormEvent } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import {
@@ -8,35 +8,54 @@ import {
   Typography,
   Button,
   Box,
-  Paper,
   TextField,
   Stack,
   IconButton,
 } from '@mui/material'
 import LogoutIcon from '@mui/icons-material/Logout'
 import GoogleIcon from '@mui/icons-material/Google'
+import ReCAPTCHA from 'react-google-recaptcha'
+
 
 export default function AccessPage() {
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
+
   const { data: session, status } = useSession()
   const router = useRouter()
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
 
-  const handleAccess = async (e: React.FormEvent) => {
+
+  const handleAccess = async (e: FormEvent) => {
     e.preventDefault()
-    setError(null)
+    if (!recaptchaToken) {
+      setError('Please complete the reCAPTCHA')
+      return
+    }
+
     const res = await fetch('/api/verify-access', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: code.toUpperCase() }),
+      body: JSON.stringify({ email, code: code.toUpperCase(), recaptchaToken }),
     })
-    if (res.ok) {
-      router.push(`/course/${code.toUpperCase()}`)
-    } else {
-      const body = await res.json()
-      setError(body.error ?? 'Access denied')
+    const payload = await res.json();
+
+    if (!res.ok) {
+      // payload.error (or .message) comes from your API’s JSON
+      setError(payload.error || payload.message || "Access denied");
+      recaptchaRef.current?.reset(); // Reset reCAPTCHA on error
+      setRecaptchaToken(null); // Clear token
+      return;
     }
+
+    // 4) On success…
+    setError(null)
+    recaptchaRef.current?.reset()
+    setRecaptchaToken(null)
+    router.push(`/course/${code}`);
   }
 
   // If not signed in, show login modal just like landing
@@ -116,6 +135,18 @@ export default function AccessPage() {
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
           />
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+            onChange={(token) => {
+              setRecaptchaToken(token)
+              setError(null)
+            }}
+            onExpired={() => {
+              setRecaptchaToken(null)
+            }}
+
+          />
           <Button type="submit" variant="contained" fullWidth>
             Access Course
           </Button>
@@ -125,6 +156,7 @@ export default function AccessPage() {
             </Typography>
           )}
         </Stack>
+
       </Box>
     </Box>
   )
